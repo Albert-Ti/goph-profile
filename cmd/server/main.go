@@ -1,16 +1,23 @@
 package main
 
 import (
+	"context"
+	"log"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/Albert-Ti/goph-profile/internal/config"
 	"github.com/Albert-Ti/goph-profile/internal/repository"
 	"github.com/Albert-Ti/goph-profile/internal/service"
+
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-migrate/migrate/v4"
 
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres" // ← для работы с PostgreSQL
 	_ "github.com/golang-migrate/migrate/v4/source/file"       // ← для чтения файлов
 )
@@ -38,15 +45,33 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
+	server := &http.Server{Addr: opts.RunAddr, Handler: r}
+
+	idleConnsClosed := make(chan struct{})
+
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		<-sigint
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		close(idleConnsClosed)
+	}()
+
 	slog.Info("Running server", "host", opts.RunAddr)
 
-	if err := http.ListenAndServe(opts.RunAddr, r); err != nil {
-		panic(err)
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		slog.Error("HTTP server shutdown", "error", err)
+		return
 	}
+	<-idleConnsClosed
 
-	if err != nil {
-		panic(err)
-	}
+	slog.Info("HTTP server shutdown gracefully")
+
 }
 
 func runMigrations(dsn string) error {
