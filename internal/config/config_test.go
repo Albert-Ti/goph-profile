@@ -18,7 +18,6 @@ func TestBuild(t *testing.T) {
 	allEnvKeys := []string{
 		"SERVER_ADDRESS",
 		"DB_CONN_STRING",
-		"ENABLE_SMTP",
 	}
 
 	tests := []struct {

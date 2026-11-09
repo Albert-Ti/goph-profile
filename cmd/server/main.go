@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -57,7 +56,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("HTTP server Shutdown: %v", err)
+			slog.Info("HTTP server Shutdown: %v", err)
 		}
 		close(idleConnsClosed)
 	}()
@@ -71,7 +70,6 @@ func main() {
 	<-idleConnsClosed
 
 	slog.Info("HTTP server shutdown gracefully")
-
 }
 
 func runMigrations(dsn string) error {
