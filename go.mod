@@ -3,7 +3,6 @@ module github.com/Albert-Ti/goph-profile
 go 1.26.10
 
 require (
-	github.com/Albert-Ti/go-keeper v0.0.0-20261025125626-782787dba8dd
 	github.com/aws/aws-sdk-go-v2 v1.47.8
 	github.com/aws/aws-sdk-go-v2/config v1.33.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.16
@@ -11,9 +10,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.9
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.5.0
+	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/stretchr/testify v1.12.1
-	github.com/wneessen/go-mail v0.8.2
 )
 
 require (
@@ -34,8 +33,8 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )

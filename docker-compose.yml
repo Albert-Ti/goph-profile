@@ -1,8 +1,7 @@
-name: go-keeper
+name: goph-profile
 
 services:
   postgres:
-    container_name: postgres
     image: postgres:latest
     restart: always
     ports:
@@ -14,34 +13,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql
 
-  seaweedfs-s3:
-    container_name: seaweedfs-s3
-    image: chrislusf/seaweedfs:latest
-    restart: always
-    ports:
-      - 8333:8333
-      - 9333:9333
-      - 8888:8888 # Визуальный просмотр файлов в браузере
-    volumes:
-      - ./security.toml:/etc/seaweedfs/security.toml:ro
-      - seaweedfs-data:/data
-    entrypoint: ['/bin/sh', '-c']
-    command:
-      - |
-        echo '{
-          "identities": [
-            {"name": "anonymous", "actions": ["Read"]},
-            {
-              "name": "gokeeper",
-              "credentials": [{"accessKey": "s3-access", "secretKey": "s3-secret"}],
-              "actions": ["Admin", "Read", "List", "Tagging", "Write"]
-            }
-          ]
-        }' > /etc/seaweedfs/config.json && \
-        weed -config_dir=/etc/seaweedfs server -s3 -s3.config /etc/seaweedfs/config.json
-
   adminer:
-    container_name: adminer
     image: adminer
     restart: always
     ports:
@@ -49,6 +21,3 @@ services:
 
 volumes:
   pg-data: {}
-  redis-data: {}
-  minio-data: {}
-  seaweedfs-data: {}
