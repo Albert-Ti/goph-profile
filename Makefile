@@ -17,6 +17,10 @@ endif
 run:
 	go run $(RACE_FLAG) $(RUN_PATH) -d="$(DB_URL)"
 
+# Сборка с передачей значений
+build:
+	go build -o gophprofile $(RUN_PATH)
+
 # ---------------------- MIGRATIONS
 # Создание новой миграции: make migrate-create name=my_migration
 migrate-create:

@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: db
     volumes:
       - pg-data:/var/lib/postgresql
+    depends_on:
+      - seaweedfs-s3
 
   adminer:
     image: adminer
@@ -19,5 +21,49 @@ services:
     ports:
       - 5050:8080
 
+  seaweedfs-s3:
+    image: chrislusf/seaweedfs:latest
+    restart: always
+    ports:
+      - 8333:8333
+      - 9333:9333
+      - 8888:8888 # Визуальный просмотр файлов в браузере
+    volumes:
+      - ./security.toml:/etc/seaweedfs/security.toml:ro
+      - seaweedfs-data:/data
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        echo '{
+          "identities": [
+            {"name": "anonymous", "actions": ["Read"]},
+            {
+              "name": "goph-profile",
+              "credentials": [{"accessKey": "s3-access", "secretKey": "s3-secret"}],
+              "actions": ["Admin", "Read", "List", "Tagging", "Write"]
+            }
+          ]
+        }' > /etc/seaweedfs/config.json && \
+        weed -config_dir=/etc/seaweedfs server -s3 -s3.config /etc/seaweedfs/config.json
+
+  server:
+    build:
+      dockerfile: Dockerfile.server
+      target: dev
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+
+  client:
+    build:
+      dockerfile: Dockerfile.client
+    ports:
+      - 80:80
+    depends_on:
+      - server
+
 volumes:
   pg-data: {}
+  minio-data: {}
+  seaweedfs-data: {}

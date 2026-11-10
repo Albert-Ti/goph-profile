@@ -1,0 +1,7 @@
+FROM nginx:1.23.1-alpine AS prod
+
+COPY  ./web/static /usr/share/nginx/html
+
+COPY ./nginx/default.conf /etc/nginx/conf.d
+
+ENTRYPOINT [ "nginx", "-g", "daemon off;"]
