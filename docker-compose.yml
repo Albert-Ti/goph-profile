@@ -7,9 +7,9 @@ services:
     ports:
       - 5432:5432
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pg-data:/var/lib/postgresql
     depends_on:
@@ -20,6 +20,8 @@ services:
     restart: always
     ports:
       - 5050:8080
+    depends_on:
+      - postgres
 
   seaweedfs-s3:
     image: chrislusf/seaweedfs:latest
@@ -29,7 +31,6 @@ services:
       - 9333:9333
       - 8888:8888 # Визуальный просмотр файлов в браузере
     volumes:
-      - ./security.toml:/etc/seaweedfs/security.toml:ro
       - seaweedfs-data:/data
     entrypoint: ['/bin/sh', '-c']
     command:
@@ -39,7 +40,7 @@ services:
             {"name": "anonymous", "actions": ["Read"]},
             {
               "name": "goph-profile",
-              "credentials": [{"accessKey": "s3-access", "secretKey": "s3-secret"}],
+              "credentials": [{"accessKey": "${OBJ_STORAGE_ACCESS_KEY}", "secretKey": "${OBJ_STORAGE_SECRET_KEY}"}],
               "actions": ["Admin", "Read", "List", "Tagging", "Write"]
             }
           ]
@@ -50,20 +51,32 @@ services:
     build:
       dockerfile: Dockerfile.server
       target: dev
-    ports:
-      - 8080:8080
+    restart: on-failure
+    environment:
+      SERVER_ADDRESS: ${SERVER_ADDRESS}
+      DB_CONN_STRING: ${DB_CONN_STRING}
+      OBJ_STORAGE_ADDR: ${OBJ_STORAGE_ADDR}
+      OBJ_STORAGE_ACCESS_KEY: ${OBJ_STORAGE_ACCESS_KEY}
+      OBJ_STORAGE_SECRET_KEY: ${OBJ_STORAGE_SECRET_KEY}
+      OBJ_STORAGE_BUCKET: ${OBJ_STORAGE_BUCKET}
+      MIGRATIONS_PATH: 'file:///app/migrations'
     depends_on:
       - postgres
 
   client:
     build:
       dockerfile: Dockerfile.client
-    ports:
-      - 80:80
     depends_on:
       - server
 
+  nginx:
+    build:
+      dockerfile: Dockerfile.nginx
+    ports:
+      - 80:80
+    depends_on:
+      - client
+
 volumes:
   pg-data: {}
-  minio-data: {}
   seaweedfs-data: {}

@@ -2,16 +2,12 @@ FROM golang:1.26-alpine AS base
 WORKDIR /app
 
 FROM base AS build
+COPY go.mod go.sum ./
+RUN go mod download
 COPY ./ ./
-RUN go mod tidy
-RUN go build -o gophprofile cmd/server/main.go
+RUN CGO_ENABLED=0 go build -o gophprofile cmd/server/main.go
 
-FROM base AS dev
+FROM alpine:3.22 AS dev
+COPY --from=build /app/migrations /app/migrations
 COPY --from=build /app/gophprofile /app/gophprofile
 ENTRYPOINT [ "/app/gophprofile" ]
-
-# FROM base AS git_build
-# RUN apk add --no-cache git ca-certificates openssh-client
-# RUN git clone https://github.com/Albert-Ti/goph-profile /app
-# CMD cd /app/goph-profile && git switch develop
-
