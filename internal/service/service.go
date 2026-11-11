@@ -7,9 +7,10 @@ import (
 
 type Service struct {
 	repository repository.Repository
+	storage    repository.ObjStorage
 	opts       *config.Options
 }
 
-func NewService(repo repository.Repository, opts *config.Options) *Service {
-	return &Service{repo, opts}
+func NewService(repo repository.Repository, storage repository.ObjStorage, opts *config.Options) *Service {
+	return &Service{repo, storage, opts}
 }

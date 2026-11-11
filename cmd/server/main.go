@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Albert-Ti/goph-profile/internal/config"
+	"github.com/Albert-Ti/goph-profile/internal/handlers"
 	"github.com/Albert-Ti/goph-profile/internal/repository"
 	"github.com/Albert-Ti/goph-profile/internal/service"
 
@@ -32,17 +33,35 @@ func main() {
 		panic(err)
 	}
 
-	if err := runMigrations(opts.DBConnStr); err != nil {
+	storage, err := repository.NewObjStorage(
+		opts.ObjStorageRunAddr,
+		opts.ObjStorageAccessKey,
+		opts.ObjStorageSecretKey,
+		opts.ObjStorageBucket,
+	)
+	if err != nil {
 		panic(err)
 	}
 
-	_ = service.NewService(repo, opts)
+	slog.Info("Connecting object storage", "bucket", opts.ObjStorageBucket)
+
+	if err := runMigrations(opts.DBConnStr, opts.MigrationsPath); err != nil {
+		panic(err)
+	}
+
+	svc := service.NewService(repo, storage, opts)
 
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
+
+	r.Post("/api/v1/avatars", handlers.CreateAvatar(svc))
+	r.Get("/api/v1/avatars/{id}", handlers.GetAvatar(svc))
+	r.Get("/api/v1/avatars/{id}/metadata", handlers.GetAvatarMetadata(svc))
+	r.Delete("/api/v1/avatars/{id}", handlers.DeleteAvatar(svc))
+	r.Get("/health", handlers.HealthCheck(svc))
 
 	server := &http.Server{Addr: opts.RunAddr, Handler: r}
 
@@ -72,11 +91,11 @@ func main() {
 	slog.Info("HTTP server shutdown gracefully")
 }
 
-func runMigrations(dsn string) error {
+func runMigrations(dsn, path string) error {
 	if dsn == "" {
 		return nil
 	}
-	m, errMigrate := migrate.New("file://migrations", dsn)
+	m, errMigrate := migrate.New(path, dsn)
 	if errMigrate != nil {
 		return errMigrate
 	}
