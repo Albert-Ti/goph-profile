@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres" // ← для работы с PostgreSQL
@@ -52,6 +53,21 @@ func main() {
 	svc := service.NewService(repo, storage, opts)
 
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5500", "http://127.0.0.1:5500"},
+		// Разрешенные методы: ваш API использует GET/POST/PUT/DELETE, добавляем OPTIONS для preflight
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+
+		// Разрешенные заголовки: Content-Type для JSON, Authorization для токенов
+		AllowedHeaders: []string{"Content-Type", "X-User-Id"},
+
+		// Если фронтенду нужно передавать Cookie, установите true, но тогда AllowedOrigins не может содержать "*"
+		AllowCredentials: true,
+
+		// Кэширование preflight-запросов на 300 секунд, снижает количество OPTIONS-запросов
+		MaxAge: 300,
+	}))
 
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
